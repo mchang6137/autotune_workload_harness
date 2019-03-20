@@ -53,34 +53,67 @@ def collect_results():
     workload_pods = int(request.args.get('w', default=1))
     hostname_list = parse_hostnames()
     
+    total_attempt = 25
+    for attempt in range(total_attempt):
+        session = FuturesSession()
+        futures = []
+        for worker_id in range(workload_pods):
+            port = workload_port + worker_id
+            complete_hostname = 'http://' + hostname_list[worker_id] + ':' + str(port) + '/collectresults'
+            futures.append(session.get(complete_hostname))
+
+        results = []
+        is_collected = True
+        for future in futures:
+            try:
+                result = future.result().json()
+                results.append(result)
+            except Exception as e:
+                print('Result on attempt {} is {}'.format(attempt, results))
+                sys.stdout.flush()
+                time.sleep(10)
+                is_collected = False
+                break
+
+        if is_collected is False:
+            continue
+                
+        # Average over all the worklaod generators
+        result_avg = {}
+        for result in results:
+            for k in result:
+                if k in result_avg:
+                    result_avg[k] += float(result[k])/workload_pods
+                else:
+                    result_avg[k] = float(result[k])/workload_pods
+
+        return json.dumps(result_avg), 200
+
+    return {}, 400
+
+@app.route('/clearentries')
+def clear_results():
+    workload_pods = int(request.args.get('w', default=1))
+    hostname_list = parse_hostnames()
+    # Hardcoded here to just the hostname of the haproxy
+    deleted_successfully = delete_final('haproxy.q')
+
+    if deleted_successfully is False:
+        print('Still some remaining entries after 100 seconds of waiting')
+        return 'fail'
+
+    # Also delete output.txt files for safety
     session = FuturesSession()
     futures = []
     for worker_id in range(workload_pods):
         port = workload_port + worker_id
-        complete_hostname = 'http://' + hostname_list[worker_id] + ':' + str(port) + '/collectresults'
+        complete_hostname = 'http://' + hostname_list[worker_id] + ':' + str(port) + '/cleanfiles'
         futures.append(session.get(complete_hostname))
 
-    results = []
     for future in futures:
         result = future.result()
-        print(type(result))
-        sys.stdout.flush()
-        results.append(result.json())
-
-    print(results)
-    sys.stdout.flush()
-        
-    return json.dumps(results)
-
-@app.route('/clearentries')
-def clear_results():
-    hostname = request.args.get('hostname')
-    deleted_successfully = delete_final(hostname)
-    if deleted_successfully:
-        return 'success'
-    else:
-        print('Still some remaining entries after 100 seconds of waiting')
-        return 'fail'
+    
+    return 'success'
     
 def execute_parse_results():
     rps_cmd = 'cat /app/output.txt | grep \'Requests per second\' | awk {{\'print $4\'}}'

@@ -3,6 +3,8 @@ from clear_entries import *
 import pandas as pd
 import subprocess
 import json
+import os
+import sys
 
 app = Flask(__name__)
 
@@ -12,32 +14,37 @@ def run_experiment():
     num_requests = int(request.args.get('n', default=350))
     concurrency = int(request.args.get('c', default=150))
     hostname = request.args.get('hostname')
-    port = int(request.args.get('port'))
+    port = int(request.args.get('port', default=80))
 
     post_cmd = 'ab -p post -T text/plain -n {} -c {} -s 200 -q \
     -e results_file http://{}/api/todos > /app/output.txt'.format(num_requests, concurrency, hostname)
     subprocess.Popen(post_cmd, shell=True)
-    return 'Experiment started!'
+    return 'Experiment started!', 200
+
+@app.route('/cleanfiles')
+def clean_files():
+    delete_files_cmd = 'rm output.txt'
+    subprocess.Popen(delete_files_cmd, shell=True)
+    return 'File deleted', 200
 
 # Collect and clear results
 @app.route('/collectresults')
 def collect_results():
     results = execute_parse_results()
     if len(results.keys()) == 0:
-        return 'Failed'
+        return 'Failed', 400
     else:
         results = execute_parse_results()
-    return json.dumps(results)
+    return json.dumps(results), 200
 
 @app.route('/clearentries')
 def clear_results():
     hostname = request.args.get('hostname')
     deleted_successfully = delete_final(hostname)
     if deleted_successfully:
-        return 'success'
+        return 'success',200
     else:
-        print('Still some remaining entries after 100 seconds of waiting')
-        return 'fail'
+        return 'fail',400
     
 def execute_parse_results():
     rps_cmd = 'cat /app/output.txt | grep \'Requests per second\' | awk {{\'print $4\'}}'
@@ -73,7 +80,8 @@ def execute_parse_results():
     return results
 
 if __name__ == '__main__':
+    port = int(os.environ['WORKLOAD_PORT'])
     app.run(
         host=app.config.get('HOST', '0.0.0.0'),
-        port=app.config.get('PORT', 5000)
+        port=app.config.get('PORT', port)
     )
