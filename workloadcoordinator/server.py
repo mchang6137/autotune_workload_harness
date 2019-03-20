@@ -69,8 +69,6 @@ def collect_results():
                 result = future.result().json()
                 results.append(result)
             except Exception as e:
-                print('Result on attempt {} is {}'.format(attempt, results))
-                sys.stdout.flush()
                 time.sleep(10)
                 is_collected = False
                 break
@@ -138,10 +136,10 @@ def execute_parse_results():
 
     try:
         results['rps'] = float(result_rps.strip('\n'))
-        results['latency99'] = float(result_latency99.strip('\n'))
-        results['latency90'] = float(result_latency90.strip('\n'))
-        results['latency50'] = float(result_latency50.strip('\n'))
-        results['latency100'] = float(result_latency100.strip('\n'))
+        results['latency_99'] = float(result_latency99.strip('\n'))
+        results['latency_90'] = float(result_latency90.strip('\n'))
+        results['latency_50'] = float(result_latency50.strip('\n'))
+        results['latency'] = float(result_latency100.strip('\n'))
     except:
         if len(results.keys()) == 0:
             return {}
