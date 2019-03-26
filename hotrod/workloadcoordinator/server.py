@@ -114,18 +114,10 @@ def collect_results():
 @app.route('/clearentries')
 def clear_results():
     workload_pods = int(request.args.get('w', default=1))
-    # Hardcoded here to just the hostname of the haproxy
-    #deleted_successfully = delete_final('haproxy.q')
-
-    if deleted_successfully is False:
-        print('Still some remaining entries after 100 seconds of waiting')
-        return 'fail'
-
-    # Also delete output.txt files for safety
     session = FuturesSession()
     futures = []
     experiment_types = ['index', 'mapper', 'dispatch']
-    for experiment in experiment_experiment_types:
+    for experiment in experiment_types:
         hostname_list = parse_hostnames(experiment)
         for worker_id in range(workload_pods):
             port = workload_port[experiment] + worker_id
