@@ -30,8 +30,9 @@ def run_experiment():
     # In this case, workload pods is the number of replica pods for an individual endpoint
     # Assumes the same number of replicas for each endpoint.
     workload_pods = int(request.args.get('w', default=1))
-    n = int(request.args.get('n', default=350))
-    c = int(request.args.get('c', default=150))
+    num_dispatch = int(request.args.get('num_dispatch', default=500))
+    num_index = int(request.args.get('num_index', default=1000))
+    c = int(request.args.get('c', default=100))
     frontend_hostname = request.args.get('frontend_hostname', default='hotrod-ingress.q')
     frontend_port = request.args.get('frontend_port', default=80)
     
@@ -46,7 +47,8 @@ def run_experiment():
             port = workload_port[experiment] + worker_id
 
             complete_hostname = 'http://' + hostname_list[worker_id] + ':' + str(port) + '/startab'
-            futures.append(session.get(complete_hostname, params={'n': n,
+            futures.append(session.get(complete_hostname, params={'num_dispatch': num_dispatch,
+                                                                  'num_index': num_index,
                                                                   'c': c,
                                                                   'hostname': frontend_hostname,
                                                                   'port': frontend_port,

@@ -13,18 +13,19 @@ app = Flask(__name__)
 def run_experiment():
     request_type = request.args.get('request_type') # Request type must be index, dispatch, or mapper
     assert request_type == 'index' or request_type == 'dispatch' or request_type == 'mapper'
-    num_requests = int(request.args.get('n', default=350))
+    num_dispatch = int(request.args.get('num_dispatch', default=500))
+    num_index = int(request.args.get('num_index', default=1000)
     concurrency = int(request.args.get('c', default=150))
     hostname = request.args.get('hostname')
     port = int(request.args.get('port', default=80))
 
     cmd = '' 
     if request_type == 'index':
-        cmd = 'ab -q -n {} -c {} -s 9999 -l http://{}:80/ > output.txt'.format(num_requests, concurrency, hostname)
+        cmd = 'ab -q -n {} -c {} -s 9999 -l http://{}:80/ > output.txt'.format(num_index, concurrency, hostname)
     elif request_type == 'dispatch':
-        cmd = 'ab -q -n {} -c {} -s 9999 -l http://{}:80/api/dispatch?customer=123 > output.txt'.format(num_requests, concurrency, hostname)
+        cmd = 'ab -q -n {} -c {} -s 9999 -l http://{}:80/api/dispatch?customer=123 > output.txt'.format(num_dispatch, concurrency, hostname)
     elif request_type == 'mapper':
-        cmd = 'ab -q -n {} -c {} -s 9999 -l http://{}:80/map/location > output.txt'.format(num_requests, concurrency, hostname)
+        cmd = 'ab -q -n {} -c {} -s 9999 -l http://{}:80/map/location > output.txt'.format(num_dispatch, concurrency, hostname)
     
     subprocess.Popen(cmd, shell=True)
     return 'Experiment started!', 200
