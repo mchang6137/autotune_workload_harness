@@ -73,11 +73,12 @@ def collect_results():
                     'dispatch': {}}
 
     for experiment in experiment_types:
-        session = FuturesSession()
         hostname_list = parse_hostnames(experiment)
-        futures = []
         is_collected = False
         for attempt in range(total_attempt):
+            session = FuturesSession()
+            futures = []
+            
             for worker_id in range(workload_pods):
                 port = workload_port[experiment] + worker_id
                 complete_hostname = 'http://' + hostname_list[worker_id] + ':' + str(port) + '/collectresults'
