@@ -91,7 +91,7 @@ def collect_results():
                     results.append(result)
                     is_collected = True
                 except Exception as e:
-                    time.sleep(10)
+                    time.sleep(30)
                     break
 
             if is_collected is False:
